@@ -10,7 +10,7 @@
 ---
 
 ### **1. Understanding `strings`**  
-The `strings` command **extracts human-readable text from binary files**, making it useful for debugging, reverse engineering, and analyzing executables.
+The `strings` command **extracts human-readable text from binary files**, making it useful for debugging, reverse engineering, and analysing executables.
 
 👀 **Basic Syntax:**  
 ```bash
