@@ -7,6 +7,9 @@ You have an **Arduino Uno** connected to a breadboard with **five LEDs** and **t
 2. When **button 2** is pressed, the LEDs should turn **off one by one** in reverse order, also with a **200ms delay** between each.
 3. If **neither button is pressed**, the LEDs should stay in their current state.
 
+
+![alt text](ArduinoC/images/image.png)
+
 ---
 
 #### **Requirements:**
