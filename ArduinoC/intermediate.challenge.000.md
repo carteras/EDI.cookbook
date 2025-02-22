@@ -11,6 +11,10 @@ You have an **Arduino Uno** connected to a breadboard with **five LEDs** and **t
    - Change the delay timing dynamically.
    - Start or stop an **automatic sequence** where LEDs turn on and off in a loop.
 
+
+![alt text](ArduinoC/images/image-1.png)
+
+
 ---
 
 #### **Requirements:**

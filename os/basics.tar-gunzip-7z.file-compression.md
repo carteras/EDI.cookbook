@@ -95,25 +95,25 @@ The `7z` tool provides high compression ratios for various formats.
 
 #### 🔄 **1. Creating a `.7z` Archive**
 ```bash
-7z a archive.7z file1 file2 dir/
+7za a archive.7z file1 file2 dir/
 ```
 ✅ Compresses `file1`, `file2`, and `dir/` into `archive.7z`.
 
 #### 📦 **2. Extracting a `.7z` Archive**
 ```bash
-7z x archive.7z
+7za x archive.7z
 ```
 ✅ Extracts `archive.7z` into the current directory.
 
 #### 🔍 **3. Viewing Contents of a `.7z` Archive**
 ```bash
-7z l archive.7z
+7za l archive.7z
 ```
 ✅ Lists the files inside `archive.7z`.
 
 #### 🚀 **4. Using Maximum Compression Mode**
 ```bash
-7z a -mx9 archive.7z file1 file2
+7za a -mx9 archive.7z file1 file2
 ```
 ✅ Uses the **highest** compression level (`-mx9`).
 
