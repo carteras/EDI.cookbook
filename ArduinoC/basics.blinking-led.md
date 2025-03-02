@@ -30,9 +30,9 @@ Blinking an LED is one of the simplest Arduino projects, demonstrating **digital
 ```
 [Arduino Pin 13] --- [LED Anode (+)]
                           |
-                        [Resistor 220Ω - 1kΩ]
+               [Resistor 220Ω - 1kΩ]
                           |
-                         [GND]
+                        [GND]
 ```
 
 ---
