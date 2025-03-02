@@ -17,14 +17,14 @@ The system should loop back to State 1 after State 3.
 
 ```cpp
 
-int const SLOW = 1000;
-int const FAST = 200;
-int const SOLID = 0;
+int const int SLOW = 1000;
+int const int FAST = 200;
+int const int SOLID = 0;
 
 
-BLINK_SPEED speed = SLOW;
+int const int CURRENT_SPEED = SLOW;
 
-int WAIT_SPEED = 3000;
+int const int WAIT_TIME = 3000;
 int LED = 13;
 unsigned long endTime;
 unsigned long startTime;
