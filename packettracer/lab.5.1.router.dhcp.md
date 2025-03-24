@@ -103,7 +103,7 @@ Now we could have manually limited that above but we can also exclude some speci
 Router#configure terminal
 Enter configuration commands, one per line.  End with CNTL/Z.
 Router(config)#ip dhcp excluded-address 192.168.1.1 192.168.1.99
-Router(config)# ip dhcp exclude-address 192.168.1.150 192.168.1.254
+Router(config)# ip dhcp excluded-address 192.168.1.150 192.168.1.254
 ```
 
 ### Seeing what you've done
