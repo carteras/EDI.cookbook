@@ -29,3 +29,43 @@ At the end of this session you will be able to:
 
 ## Tutorial
 
+#### Code
+
+```cpp
+int motorA = 2;
+int motorB = 3;
+int motorD = 4;
+int motorE = 5;
+
+
+
+void setup()
+{
+  pinMode(motorA, OUTPUT);
+  pinMode(motorB, OUTPUT);
+  pinMode(motorD, OUTPUT);
+  pinMode(motorE, OUTPUT);
+  Serial.begin(9600);
+}
+
+void loop()
+{
+  Serial.println("forwards");
+  digitalWrite(motorA, LOW);
+  digitalWrite(motorB, HIGH);
+  
+  digitalWrite(motorD, HIGH);
+  digitalWrite(motorE, LOW);
+  
+  delay(5000);
+  Serial.println("turn left");
+  
+  digitalWrite(motorA, LOW);
+  digitalWrite(motorB, HIGH);
+  
+  digitalWrite(motorD, LOW);
+  digitalWrite(motorE, HIGH);
+  delay(5000);
+  
+}
+```
