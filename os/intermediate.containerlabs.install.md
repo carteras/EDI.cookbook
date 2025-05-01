@@ -1,158 +1,149 @@
-# Installing Containerlab on Fedora Server 42
-
----
+# Tutorial: Deploying Alpine Linux Servers with Containerlab
 
 ## Overview
 
-Containerlab is a tool for deploying virtual network topologies using container runtimes. In Fedora Server 42, we'll install **containerd** + **nerdctl** as the container backend, then install Containerlab itself.
+This guide shows how to use Containerlab on Fedora Server 42 to quickly deploy multiple Alpine Linux container-based servers. You’ll:
+
+1. Verify Containerlab is installed.
+2. Create a simple topology file deploying Alpine nodes.
+3. Deploy, access, and destroy the lab.
 
 ---
 
 ## Prerequisites
 
-- A Fedora Server 42 system with root or `sudo` access.  
-- Basic familiarity with the shell (`dnf`, `systemctl`, `curl`).
+* Fedora Server 42 with Containerlab, containerd (or Docker), and nerdctl installed.
+* Basic familiarity with shell commands (`ls`, `curl`, `containerlab`).
 
 ---
 
-## 1. Update Your System
+## 1. Verify Containerlab Installation
 
-Always start by updating installed packages:
-
-```bash
-sudo dnf update -y
-```
-
----
-
-## 2. Install Required Tools
-
-Install Git, curl, and jq for downloads and scripting:
-
-```bash
-sudo dnf install -y git curl jq
-```
-
----
-
-## 3. Install containerd and nerdctl
-
-Containerlab supports multiple runtimes; we’ll use containerd + nerdctl:
-
-1. **Install containerd**:
-
-   ```bash
-   sudo dnf install -y containerd
-   ```
-
-2. **Enable and start** containerd:
-
-   ```bash
-   sudo systemctl enable --now containerd
-   ```
-
-3. **Download and install** nerdctl (CLI for containerd):
-
-   ```bash
-   NERDCTL_VERSION="1.5.0"
-   curl -fsSL \
-     "https://github.com/containerd/nerdctl/releases/download/v${NERDCTL_VERSION}/nerdctl-${NERDCTL_VERSION}-linux-amd64.tar.gz" \
-     -o nerdctl.tar.gz
-   sudo tar Cxzvf /usr/local/bin nerdctl.tar.gz
-   rm nerdctl.tar.gz
-   ```
-
-4. **Verify** installation:
-
-   ```bash
-   nerdctl --version
-   ```
-
----
-
-## 4. Install Containerlab
-
-Containerlab provides a simple installer script:
-
-```bash
-curl -sL https://get.containerlab.dev | sudo bash
-```
-
-Check you have the binary:
+Ensure Containerlab is available on your system:
 
 ```bash
 containerlab version
 ```
 
----
-
-## 5. Ensure Your PATH
-
-Make sure `/usr/local/bin` is in your `PATH`, so you can run Containerlab:
-
-```bash
-echo $PATH  # should include /usr/local/bin
-```
-
-If not, add it to `/etc/profile.d/containerlab.sh`:
-
-```bash
-sudo tee /etc/profile.d/containerlab.sh << 'EOF'
-export PATH=
-/usr/local/bin:$PATH
-EOF
-source /etc/profile.d/containerlab.sh
-```
+You should see a version string. If not, follow your standard Containerlab install steps before proceeding.
 
 ---
 
-## 6. Test with a Sample Topology
+## 2. Create an Alpine Topology File
 
-1. **Create** `basic.clab.yml`:
+1. In your working directory, create `alpine-servers.clab.yml`:
 
    ```yaml
-   name: clab-test
+   name: alpine-servers
    nodes:
-     r1:
-       kind: vr-sros
-       image: ghcr.io/srl-labs/containerlab-rr:latest
+     server1:
+       kind: generic
+       image: alpine:latest
+       env:
+         - "PS1=[server1]\$ "
+     server2:
+       kind: generic
+       image: alpine:latest
+       env:
+         - "PS1=[server2]\$ "
+   # No links: servers operate independently
    ```
 
-2. **Deploy** it:
+   * **name**: lab identifier.
+   * **kind**: `generic` uses a plain container.
+   * **image**: official Alpine Linux Docker image.
+   * **env**: optional, sets shell prompt for clarity.
 
-   ```bash
-   containerlab deploy -t basic.clab.yml
-   ```
-
-3. **List nodes**:
-
-   ```bash
-   containerlab nodes
-   ```
-
-4. **Destroy** the lab:
-
-   ```bash
-   containerlab destroy -t basic.clab.yml
-   ```
+2. Save the file.
 
 ---
 
-## 7. Cleanup Tips
+## 3. Deploy the Alpine Lab
 
-- To remove Containerlab binary:
+Use Containerlab to spin up the containers:
 
-  ```bash
-  sudo rm -f /usr/local/bin/containerlab
-  ```
+```bash
+containerlab deploy -t alpine-servers.clab.yml
+```
 
-- To stop and remove containerd:
-
-  ```bash
-  sudo systemctl disable --now containerd
-  sudo dnf remove -y containerd
-  ```
+* Containerlab will pull the Alpine image (if needed) and start three containers: `server1`, `server2`, and `server3`.
 
 ---
 
-**Congratulations!** You now have Containerlab running on Fedora Server 42.
+## 4. Verify Running Servers
+
+List active nodes:
+
+```bash
+containerlab nodes
+```
+
+Example output:
+
+```
+NODE       TYPE      IMAGE           STATE  
+server1    generic   alpine:latest   up     
+server2    generic   alpine:latest   up     
+server3    generic   alpine:latest   up     
+```
+
+Check container details:
+
+```bash
+containerlab inspect alpine-servers
+```
+
+---
+
+## 5. Access a Server Shell
+
+To open a shell on `server1`:
+
+```bash
+containerlab exec -t alpine-servers server1 sh
+```
+
+* You’ll land in an Alpine shell.
+* Run `uname -a` or `cat /etc/os-release` to confirm it’s Alpine.
+
+Repeat for `server2` or `server3` by replacing the node name.
+
+---
+
+## 6. Interact with the Servers
+
+Inside a server container, you can install packages or run tests. For example:
+
+```bash
+# Inside server1
+apk update
+apk add bash
+bash --version
+```
+
+Use these servers as lightweight test VMs for network experiments, scripting practice, or service demos.
+
+---
+
+## 7. Destroy the Lab
+
+When you’re done, clean up all containers and networks:
+
+```bash
+containerlab destroy -t alpine-servers.clab.yml
+```
+
+---
+
+## 8. Cleanup Images (Optional)
+
+To remove the Alpine image from your local cache:
+
+```bash
+nerdctl rmi alpine:latest
+# or docker rmi alpine:latest
+```
+
+---
+
+**Congratulations!** You’ve deployed and managed multiple Alpine Linux server containers using Containerlab on Fedora Server 42. Feel free to extend the topology, add links, or customize each server further.
