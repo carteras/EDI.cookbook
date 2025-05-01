@@ -1,4 +1,4 @@
-**Adding a User to Linux with `useradd` and `adduser`**  
+# Adding a User to Linux with `useradd` and `adduser`
 
 
 ## Overview
