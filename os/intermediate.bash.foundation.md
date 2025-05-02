@@ -61,7 +61,7 @@ Append these lines to the script:
 
 ```bash
 # Create or overwrite file and add content
-echo "$CONTENT" > "$FILENAME"
+echo "$CONTENT" > /home/"$FILENAME"
 ```  
 
 - The `>` operator creates (or truncates) the file and writes the content.
