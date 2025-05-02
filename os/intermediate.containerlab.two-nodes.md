@@ -1,150 +1,167 @@
-**Tutorial: Building a Two-Node SSH-Enabled Alpine Topology with Containerlab**  
-*Audience:* Year 11 students with basic Linux and Containerlab experience  
+# Building a Two-Node SSH-Enabled Alpine Topology with Containerlab  
 
----
+[containerlab install](https://containerlab.dev/install/)
 
-## Overview
-Learn how to create and deploy a two-node network using Containerlab and custom Alpine Linux containers with SSH enabled, default users, and password authentication.
-
-**Goals:**
-1. Build a custom Alpine-based Docker image that:  
-   - Installs and configures OpenSSH.  
-   - Creates a default user (`bushranger`) with a known password.  
-   - Enables password authentication.  
-2. Write a Containerlab topology (`.clab.yml`) that uses this image for two nodes.  
-3. Deploy the lab and test SSH connectivity between the host and each node.
-
----
-
-## Prerequisites
-- Containerlab, containerd, and nerdctl (or Docker) installed on Fedora Server 42.  
-- `git`, `curl`, and basic Bash.  
-- `docker` or `nerdctl` CLI to build images.
-
----
-
-## 1. Create the Provisioning Script
-In your working directory, create `provision.sh`:
 ```bash
-#!/usr/bin/env bash
-set -e
-
-# Install OpenSSH
-apk update && apk add --no-cache openssh
-
-# Create default user and set password
-default_user="bushranger"
-default_pass="badpass"
-adduser -D "$default_user"
-echo "$default_user:$default_pass" | chpasswd
-
-# Enable password authentication
-sed -i 's/^#PasswordAuthentication.*/PasswordAuthentication yes/' /etc/ssh/sshd_config
-
-# Ensure SSH host keys exist
-ssh-keygen -A
-
-# Expose SSH on port 22
-# (sshd will run as the container CMD)
-```
-Make it executable:
-```bash
-chmod +x provision.sh
+mkdir clab
+cd clab
+mkdir switch-pc
+cd switch-pc
+mkdir config
 ```
 
----
-
-## 2. Write the Dockerfile
-Create `Dockerfile` next to `provision.sh`:
-```Dockerfile
-FROM alpine:latest
-
-# Copy and run provisioning
-COPY provision.sh /provision.sh
-RUN chmod +x /provision.sh \
-    && /provision.sh
-
-# Expose SSH port and start sshd in foreground
-EXPOSE 22
-CMD ["/usr/sbin/sshd", "-D"]
+```bash
+nano topology.yml
 ```
 
----
-
-## 3. Build and Tag the Image
-Build locally with nerdctl or Docker:
 ```bash
-# Using nerdctl
-erdctl build -t clab-alpine-ssh:latest .
+name: switch-pc
+topology:
+  nodes:
+    switch:
+      kind: linux
+      image: frrouting/frr:latest
+      exec:
+        - /config/config.switch.sh
+      binds:
+        - ./config:/config
+    workstation:
+      kind: linux
+      image: alpine:latest
+      exec:
+        - /config/config.workstation.sh
+      binds:
+        - ./config:/config
 
-# Or using Docker
-docker build -t clab-alpine-ssh:latest .
+  links:
+    - endpoints: ["switch:eth1", "workstation:eth1"]
 ```
 
----
+`cd config`
 
-## 4. Create the Containerlab Topology
-In the same folder, create `two-node-ssh.clab.yml`:
-```yaml
-name: two-node-ssh
+`nano config.switch.sh`
 
-nodes:
-  node1:
-    kind: generic
-    image: clab-alpine-ssh:latest
-  node2:
-    kind: generic
-    image: clab-alpine-ssh:latest
+copy and paste this: 
 
-links:
-  - endpoints:
-    - "node1:eth1"
-    - "node2:eth1"
-```  
-- **kind:** `generic` runs plain Docker/nerdctl containers.  
-- **image:** our custom Alpine SSH image.
-
----
-
-## 5. Deploy the Lab
-Run:
 ```bash
-containerlab deploy -t two-node-ssh.clab.yml
+#!/bin/bash
+
+echo "Hello switch1!"
+
+# Enable immediate flushing of output
+set -o pipefail
+exec > >(tee /proc/1/fd/1) 2>&1
+
+# Ensure correct environment variables are set
+export PATH=/usr/lib/frr:$PATH
+export LD_LIBRARY_PATH=/usr/lib/frr:$LD_LIBRARY_PATH
+
+# Enable IP forwarding
+sysctl -w net.ipv4.ip_forward=1
+sysctl -w net.ipv6.conf.all.forwarding=1
+
+# Check if zebra is already running to avoid starting it twice
+if ! pgrep zebra > /dev/null; then
+    echo "Starting up FRR daemons"
+    /usr/lib/frr/zebra -d
+    /usr/lib/frr/ospfd -d
+    /usr/lib/frr/bgpd -d
+else
+    echo "FRR daemons are already running"
+fi
+
+# Check if FRR daemons are running
+if ! pgrep zebra > /dev/null; then
+    echo "FRR failed to start" >&2
+    exit 1
+fi
+
+# Wait for the interfaces to be up
+echo "Waiting for interfaces to load up"
+
+# Loop over the interfaces and check for their status
+for iface in $(ip -br link | awk '$1 !~ /@/ && $2 == "UP" {print $1}'); do
+    while ! ip link show $iface > /dev/null 2>&1; do
+        echo "Waiting for $iface to exist..."
+        sleep 1
+    done
+
+    while ! ip -br link show $iface | grep -q "UP"; do
+        echo "Waiting for $iface to be fully up..."
+        sleep 1
+    done
+
+    echo "$iface is up"
+done
+
+echo "All interfaces are up!"
+
+echo "Setting up Linux bridge"
+
+# Create a Linux bridge instead of using FRR
+brctl addbr br0
+
+# Add all UP interfaces to the bridge, ignoring the '@' part
+for iface in $(ip -br link | awk '$2 == "UP" {print $1}' | cut -d'@' -f1); do
+    echo "Adding $iface to bridge br0"
+    brctl addif br0 $iface
+done
+
+# Bring the bridge up
+ip link set dev br0 up
+
+echo "Bridge setup complete!"
+
+ip -br link
+
+exit 0
+
 ```
-Verify nodes:
+
+exit 
+
+`nano configure.workstation.sh`
+
+I would probably type this out
+
 ```bash
-containerlab nodes
-```
+#!/bin/sh
 
----
+MY_USERNAME=adam
+MY_IP=10.0.0.100
+MY_SUBNET=24
+MY_ETHERNET=eth1
 
-## 6. Test SSH Connectivity
-1. **On the host**, SSH into `node1`:
-   ```bash
-   ssh bushranger@172.20.20.1  # default link IP
-   ```
-2. **Use the password** `badpass` when prompted.  
-3. **Repeat** for `node2` (e.g., `ssh bushranger@172.20.20.2`).
+echo "configuring $MY_USERNAME"
 
-Inside a node, you can inspect interfaces:
-```bash
-ip a
-```  
+/config/config.workstations.make_user.sh $MY_USERNAME
 
----
+echo "configuring $MY_IP/$MY_SUBNET on $MY_ETHERNET"
 
-## 7. Cleanup
-When finished:
-```bash
-containerlab destroy -t two-node-ssh.clab.yml
-```  
-To remove the image:
-```bash
-nerdctl rmi clab-alpine-ssh:latest
-# or docker rmi clab-alpine-ssh:latest
-```
+/config/config.workstations.set_ip_addresses.sh $MY_IP $MY_SUBNET $MY_ETHERNET
 
----
+echo "update packages"
+apk update && apk add iproute2 || exit 1
 
-**Congratulations!** You’ve built, deployed, and tested a two-node SSH-enabled topology using Containerlab and Alpine Linux.
+
+
+### THIS PART I WOULD COPY AND PASTE 
+
+echo "waiting for interfaces to load up"
+
+# Loop until the interface is up
+for iface in $MY_ETHERNET; do
+    while ! ip link show $iface up > /dev/null 2>&1; do
+        echo "Waiting for $iface to be up..."
+    done
+done
+
+echo "setting up IP address"
+
+ip address add $MY_IP/$MY_SUBNET dev $MY_ETHERNET
+ip link set $MY_ETHERNET up
+
+ip a s
+### STOP COPYING AND PASTING
+
 
