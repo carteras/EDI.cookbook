@@ -186,4 +186,6 @@ sudo chown "$OWNER_USER:$TARGET_GROUP" "/home/$TARGET_USER/$FILENAME"
 sudo chmod ugo-rwx "/home/$TARGET_USER/$FILENAME"
 sudo chmod u+rw,g+r "/home/$TARGET_USER/$FILENAME"
 
+
+
 ```
