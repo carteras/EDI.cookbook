@@ -44,14 +44,27 @@ In this tutorial, you will:
 Add the following lines below the shebang:
 
 ```bash
-# Variables
-FILENAME="secret.flag"
-CONTENT="This is a secure file created by script"
-TARGET_USER="alice"    # replace with your target user
-TARGET_GROUP="staff"   # replace with your target group
+#FILENAME="secret.flag"
+CONTENT="MY_SECRET_FLAG"
+OWNER_USER="adam"
+TARGET_USER="bushranger.000"
+TARGET_GROUP="bushranger.000"
 ```  
 
-- **Modify** `alice` and `staff` to the desired user and group on your system.
+- **Modify** `bushranger.000` and `bushranger.000` to the desired user and group on your system.
+
+---
+
+```bash
+echo "Adding $TARGET_USER to the system" 
+sudo useradd "$TARGET_USER"
+```
+
+```bash
+echo "Changing password" 
+
+sudo echo "$TARGET_USER:$TARGET_USER" | sudo chpasswd
+```
 
 ---
 
@@ -61,7 +74,7 @@ Append these lines to the script:
 
 ```bash
 # Create or overwrite file and add content
-echo "$CONTENT" > /home/"$FILENAME"
+echo "$CONTENT" > "/home/$TARGET_USER/$FILENAME"
 ```  
 
 - The `>` operator creates (or truncates) the file and writes the content.
@@ -74,8 +87,8 @@ Append:
 
 ```bash
 # Change ownership
-echo "Setting owner to $TARGET_USER and group to $TARGET_GROUP"
-sudo chown "$TARGET_USER:$TARGET_GROUP" "$FILENAME"
+echo "setting user to $OWNER_USER and group to $TARGET_GROUP"
+sudo chown "$OWNER_USER:$TARGET_GROUP" "/home/$TARGET_USER/$FILENAME"
 ```  
 
 - `sudo` may prompt for your password.
@@ -88,8 +101,8 @@ Append:
 
 ```bash
 # Restrict permissions: owner read/write; no access for group/others
-echo "Setting permissions to u+rw,g-rwx,o-rwx"
-chmod u=rw,go= "$FILENAME"
+sudo chmod ugo-rwx "/home/$TARGET_USER/$FILENAME"
+sudo chmod u+rw,g+r "/home/$TARGET_USER/$FILENAME"
 ```  
 
 - Alternatively, you can use numeric mode: `chmod 600 "$FILENAME"`.
@@ -147,22 +160,30 @@ chmod +x create_secure_file.sh
 ## Full Script
 
 ```bash
-#!/usr/bin/env bash
+#!/bin/bash
 
-# Variables
 FILENAME="secret.flag"
-CONTENT="This is a secure file created by script"
-TARGET_USER="alice"    # replace with your target user
-TARGET_GROUP="staff"   # replace with your target group
+CONTENT="MY_SECRET_FLAG"
+OWNER_USER="adam"
+TARGET_USER="bushranger.000"
+TARGET_GROUP="bushranger.000"
 
-# Create or overwrite file and add content
-echo "$CONTENT" > "$FILENAME"
+echo "Adding $TARGET_USER to the system" 
+sudo useradd "$TARGET_USER"
 
-# Change ownership
-echo "Setting owner to $TARGET_USER and group to $TARGET_GROUP"
-sudo chown "$TARGET_USER:$TARGET_GROUP" "$FILENAME"
+echo "Changing password" 
 
-# Restrict permissions: owner read/write; no access for group/others
-echo "Setting permissions to u+rw,g-rwx,o-rwx"
-chmod u=rw,go= "$FILENAME"
+sudo echo "$TARGET_USER:$TARGET_USER" | sudo chpasswd
+
+
+echo "$CONTENT" > "/home/$TARGET_USER/$FILENAME"
+
+
+
+echo "setting user to $OWNER_USER and group to $TARGET_GROUP"
+sudo chown "$OWNER_USER:$TARGET_GROUP" "/home/$TARGET_USER/$FILENAME"
+
+sudo chmod ugo-rwx "/home/$TARGET_USER/$FILENAME"
+sudo chmod u+rw,g+r "/home/$TARGET_USER/$FILENAME"
+
 ```
