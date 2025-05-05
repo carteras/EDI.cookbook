@@ -17,7 +17,7 @@ topology:
       cmd: sh /etc/frr/config.switch.sh
 
 
-    web:
+    web1:
       kind: linux
       image: alpine:latest
       binds:
@@ -26,9 +26,9 @@ topology:
         
       # Installs nginx and runs it in the foreground to keep the container alive
       cmd: sh -c "apk add nginx && nginx -g 'daemon off;'"
-
       exec: 
         -  sh /config/config.web.sh
+        
 
   links:
     - endpoints: ["router:eth1", "switch:eth1"]
