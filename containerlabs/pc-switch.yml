@@ -1,0 +1,30 @@
+name: testing-frrouting-as-a-switch 
+topology: 
+  nodes:
+    switch-1:
+      kind: linux 
+      image: frrouting/frr:latest
+      exec: 
+        - /config/config.switch.sh
+      binds:
+        - ./config:/config
+
+    workstation1:
+      kind: linux
+      image: alpine:latest
+      exec:
+        - /config/config.workstation.sh
+      binds:
+       - ./config:/config
+
+    workstation2:
+      kind: linux
+      image: alpine:latest
+      exec:
+        - /config/config.workstation.sh
+      binds:
+       - ./config:/config
+
+  links:
+    - endpoints: ['switch-1:eth1', "workstation1:eth1"]
+    - endpoints: ['switch-1:eth2', "workstation2:eth1"]
