@@ -44,10 +44,6 @@ Below the shebang, add:
 
 ```bash
 # Check for two arguments: user and group
-if [ $# -ne 2 ]; then
-  echo "Usage: $0 <username> <group>"
-  exit 1
-fi
 
 TARGET_USER="$1"
 TARGET_GROUP="$2"
@@ -112,21 +108,21 @@ chmod +x create_secure_file.sh
 
 1. Execute with arguments:
 
-   ```bash
+```bash
    ./create_secure_file.sh alice staff
-   ```
+```
 
 2. Check file details:
 
-   ```bash
+```bash
    ls -l "$FILENAME"
-   ```
+```
 
    Expected output:
 
-   ```text
+```text
    -rw------- 1 alice staff XX Mar 10 10:00 secret.flag
-   ```
+```
 
 ---
 
@@ -134,12 +130,6 @@ chmod +x create_secure_file.sh
 
 ```bash
 #!/usr/bin/env bash
-
-# Check for two arguments: user and group
-if [ $# -ne 2 ]; then
-  echo "Usage: $0 <username> <group>"
-  exit 1
-fi
 
 TARGET_USER="$1"
 TARGET_GROUP="$2"
