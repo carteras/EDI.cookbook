@@ -25,9 +25,7 @@ topology:
         - ./servers/config.web1.sh:/config/config.web.sh
         
       # Installs nginx and runs it in the foreground to keep the container alive
-      cmd: sh -c "apk add nginx && nginx -g 'daemon off;'"
-      exec: 
-        -  sh /config/config.web.sh
+      cmd: sh -c "apk add nginx && sh /config/config.web.sh"
 
     web2:
       kind: linux
@@ -37,20 +35,19 @@ topology:
         - ./servers/config.web2.sh:/config/config.web.sh
         
       # Installs nginx and runs it in the foreground to keep the container alive
-      cmd: sh -c "apk add nginx && nginx -g 'daemon off;'"
-      exec: 
-        -  sh /config/config.web.sh
+      cmd: sh -c "apk add nginx && sh /config/config.web.sh"
+
 
     loadbalancer:
       kind: linux
       image: alpine:latest
       binds:
-        - ./loadbalancer/haproxy.cfg:/etc/haproxy/haproxy.cfg
+        - ./servers/loadbalancer/haproxy.cfg:/etc/haproxy/haproxy.cfg
       cmd: sh -c "apk add haproxy && haproxy -f /etc/haproxy/haproxy.cfg"
 
 
-    links:
-      - endpoints: ["router:eth1", "switch:eth1"]
-      - endpoints: ["switch:eth2", "web1:eth1"]
-      - endpoints: ["switch:eth3", "web2:eth1"]
-      - endpoints: ["switch:eth4", "loadbalancer:eth1"]
+  links:
+    - endpoints: ["router:eth1", "switch:eth1"]
+    - endpoints: ["switch:eth2", "web1:eth1"]
+    - endpoints: ["switch:eth3", "web2:eth1"]
+    - endpoints: ["switch:eth4", "loadbalancer:eth1"]
