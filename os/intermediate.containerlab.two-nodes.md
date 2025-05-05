@@ -163,5 +163,11 @@ ip link set $MY_ETHERNET up
 
 ip a s
 ### STOP COPYING AND PASTING
+```
 
+After that you can access your workstation by typing in terminal 
+
+```bash
+sudo docker exec -it <your-clab-name-workstation> sh
+```
 
