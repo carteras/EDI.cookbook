@@ -1,0 +1,35 @@
+name: router-switch-web-lab
+
+topology:
+  nodes:
+    router:
+      kind: linux
+      image: frrouting/frr:latest
+      binds:
+        - ./routers/frr.conf:/etc/frr/frr.conf
+      cmd: /usr/lib/frr/docker-start
+
+    switch:
+      kind: linux
+      image: frrouting/frr:latest
+      binds:
+        - ./switches:/etc/frr
+      cmd: sh /etc/frr/config.switch.sh
+
+
+    web1:
+      kind: linux
+      image: alpine:latest
+      binds:
+        - ./servers/nginx/nginx.conf:/etc/nginx/nginx.conf
+        - ./servers/config.web.sh:/config/config.web.sh
+        
+      # Installs nginx and runs it in the foreground to keep the container alive
+      cmd: sh -c "apk add nginx && nginx -g 'daemon off;'"
+      exec: 
+        -  sh /config/config.web.sh
+        
+
+  links:
+    - endpoints: ["router:eth1", "switch:eth1"]
+    - endpoints: ["switch:eth2", "web:eth1"]

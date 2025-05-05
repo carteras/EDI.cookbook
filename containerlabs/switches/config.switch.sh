@@ -56,10 +56,18 @@ echo "Setting up Linux bridge"
 brctl addbr br0
 
 # Add all UP interfaces to the bridge, ignoring the '@' part
+# for iface in $(ip -br link | awk '$2 == "UP" {print $1}' | cut -d'@' -f1); do
+#     echo "Adding $iface to bridge br0"
+#     brctl addif br0 $iface
+# done
+
 for iface in $(ip -br link | awk '$2 == "UP" {print $1}' | cut -d'@' -f1); do
-    echo "Adding $iface to bridge br0"
-    brctl addif br0 $iface
+  [ "$iface" = "eth0" ] && continue  # skip Docker's interface
+  echo "Adding $iface to bridge br0"
+  ip link set "$iface" up
+  brctl addif br0 "$iface"
 done
+
 
 # Bring the bridge up
 ip link set dev br0 up
@@ -68,5 +76,4 @@ echo "Bridge setup complete!"
 
 ip -br link
 
-exit 0
-
+sleep infinity

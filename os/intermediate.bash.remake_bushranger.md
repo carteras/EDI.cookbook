@@ -1,248 +1,177 @@
-# Bash Script to Reset, Create User, Secure Home, and Manage `secret.flag`  
+# Bash Script to Reset and Create a Secure User Environment
 
-## Overview
+## Learning Intentions
 
-This enhanced Bash script will **reset** any previous configuration, then:
+* By the end of this tutorial, students will be able to:
+* Understand how to write and run a basic Bash script
+* Use terminal commands to manage users, groups, files, and permissions
+* Apply step-by-step logic to automate system setup tasks
+* Practice safe scripting practices using set -euo pipefail
+* Interpret and assign file ownership and permissions using chown and chmod
 
-1. Remove the old user, group, home, and flag.  
-2. Create a new system user and group.  
-3. Secure the user’s home directory with specific ownership and permissions.  
-4. Create and initialize `secret.flag`.  
-5. Set file ownership to the script runner and the new user’s group.  
-6. Apply symbolic permissions equivalent to `0640`.
+## Success Criteria 
 
-**Justification:** Cleaning up ensures that rerunning the script leaves no leftover artifacts or conflicting settings, making it idempotent and safe for repeated use.
+Students will be successful when they can:
+
+* Create and execute a Bash script without syntax errors
+* Successfully delete and recreate a user, group, and home directory
+* Secure a home directory with correct ownership with `-rwxr-x---` permissions
+* Create a secret.flag file with custom content
+* Assign file permissions using symbolic notation to provide `-rw-r----` permissions
+* Verify the results using ls -l and explain what each column means
 
 ---
 
-## Prerequisites
+## Step 1: Understand What the Script Will Do
 
-- A terminal with `sudo` privileges.  
-- Familiarity with `useradd`, `groupadd`, `userdel`, `groupdel`, `rm`, `chown`, `chmod`, and `echo`.
+This script will:
+
+1. Remove a user, group, home directory, and flag file
+2. Create a new system user and group
+3. Set correct ownership and permissions on the home directory
+4. Create a file called `secret.flag`
+5. Set ownership and symbolic permissions (`-rw-r-----`) on that file
 
 ---
 
-## 1. Create the Script File
+## Step 2: Create the Script File
+
+In your terminal:
 
 ```bash
 nano reset_and_setup.sh
 ```
 
-At the top, add:
-
-```bash
-#!/usr/bin/env bash
-set -euo pipefail
-IFS=$'\n\t'
-```  
-
-- `set -euo pipefail` makes the script exit on errors, undefined variables, or pipeline failures.  
-- `IFS` prevents word-splitting issues.
+This command opens a new file named `reset_and_setup.sh` using the `nano` text editor.
 
 ---
 
-## 2. Define Variables
+## Step 3: Write the Script Line by Line
 
-Below the shebang, include:
+Follow the instructions below to build the script. Type each line carefully and press `Enter` after each one.
+
+### 3.1: Start with the script header
 
 ```bash
-# Configuration
+#!/usr/bin/env bash
+```
+
+This tells the system to use the Bash interpreter.
+
+### 3.2: Add safe execution options
+
+```bash
+set -euo pipefail
+IFS=$'\n\t'
+```
+
+These settings make your script safer and more predictable.
+
+### 3.3: Define your variables
+
+```bash
 NEW_USER="bushranger"
 NEW_GROUP="bushrangers"
 HOME_DIR="/home/$NEW_USER"
 FLAG_FILE="secret.flag"
 FLAG_CONTENT="foo"
 RUNNER="$USER"
-```  
+```
 
-- Defining variables once makes maintenance easier.
+These variables let you reuse values later without repeating yourself.
 
----
-
-## 3. Clean Up Previous Configuration
-
-Append:
+### 3.4: Remove any previous setup
 
 ```bash
-# Remove flag file if exists
-if [ -f "$HOME_DIR/$FLAG_FILE" ]; then
-  echo "Removing old flag: $HOME_DIR/$FLAG_FILE"
-  sudo rm -f "$HOME_DIR/$FLAG_FILE"
-fi
+sudo rm -f "$HOME_DIR/$FLAG_FILE"
+sudo rm -rf "$HOME_DIR"
+sudo userdel "$NEW_USER"
+sudo groupdel "$NEW_GROUP"
+```
 
-# Remove home directory if exists
-if [ -d "$HOME_DIR" ]; then
-  echo "Deleting old home directory: $HOME_DIR"
-  sudo rm -rf "$HOME_DIR"
-fi
+This section clears out old users, groups, and files.
 
-# Delete user if exists
-if id "$NEW_USER" >/dev/null 2>&1; then
-  echo "Deleting user: $NEW_USER"
-  sudo userdel "$NEW_USER"
-fi
-
-# Delete group if exists
-if getent group "$NEW_GROUP" >/dev/null; then
-  echo "Deleting group: $NEW_GROUP"
-  sudo groupdel "$NEW_GROUP"
-fi
-```  
-
-- **Justification:** Ensures no leftover files, directories, or accounts conflict with our fresh setup.
-
----
-
-## 4. Create User and Group
-
-Append:
+### 3.5: Create a new user and group
 
 ```bash
-# Create group
-echo "Creating group: $NEW_GROUP"
 sudo groupadd "$NEW_GROUP"
-
-# Create user with home directory
-echo "Creating user: $NEW_USER"
 sudo useradd -m -g "$NEW_GROUP" -s /bin/bash "$NEW_USER"
-```  
+```
 
-- `-m` guarantees a fresh home directory.  
-- **Justification:** Explicit group creation avoids relying on defaults and clarifies intent.
+This makes sure the new user and group exist and that the user has a home folder.
 
----
-
-## 5. Secure the User’s Home Directory
-
-Append:
+### 3.6: Secure the home directory
 
 ```bash
-# Set ownership to runner and group
-echo "Chowning $HOME_DIR to $RUNNER:$NEW_GROUP"
-sudo chown -R "$RUNNER":"$NEW_GROUP" "$HOME_DIR"
-
-# Directory permissions: runner rwx, group rx, others none
-echo "Setting home directory perms to u=rwx,g=rx,o="
+sudo chown -R "$RUNNER:$NEW_GROUP" "$HOME_DIR"
 sudo chmod u=rwx,g=rx,o= "$HOME_DIR"
-```  
+```
 
-- **Justification:** `u=rwx,g=rx,o=` (`750`) allows the runner full control, group read/execute, and denies others.
+These lines set correct ownership and limit who can access the directory.
 
----
-
-## 6. Create and Initialize `secret.flag`
-
-Append:
+### 3.7: Create the flag file
 
 ```bash
-# Create flag file with runner as owner
-echo "Creating flag file: $FLAG_FILE"
 echo "$FLAG_CONTENT" | sudo tee "$HOME_DIR/$FLAG_FILE" >/dev/null
-```  
+```
 
-- Using `tee` with `sudo` writes as root, preserving permissions.  
-- **Justification:** Simplifies writing and avoids switching user context.
+This creates a file named `secret.flag` and adds a short message inside.
 
----
-
-## 7. Set File Ownership and Permissions
-
-Append:
+### 3.8: Set ownership and permissions for the flag file
 
 ```bash
-# Change owner to runner, group to new user
-echo "Chowning flag to $RUNNER:$NEW_USER"
-sudo chown "$RUNNER":"$NEW_USER" "$HOME_DIR/$FLAG_FILE"
-
-# Symbolic chmod for 0640: u=rw, g=r, o=
-echo "Setting flag perms to u=rw,g=r,o="
+sudo chown "$RUNNER:$NEW_USER" "$HOME_DIR/$FLAG_FILE"
 chmod u=rw,g=r,o= "$HOME_DIR/$FLAG_FILE"
-```  
+```
 
-- **Justification:** Symbolic mode clearly communicates intent and can be combined with other flags.
+This makes sure only the correct people can read or modify the file.
+
+When you're done typing, save and exit:
+
+* Press `Ctrl + O` to save
+* Press `Enter` to confirm the filename
+* Press `Ctrl + X` to exit the editor
 
 ---
 
-## 8. Make the Script Executable and Run
+## Step 4: Make the Script Executable
 
-Save and exit. Then:
+In your terminal, run:
 
 ```bash
 chmod +x reset_and_setup.sh
-./reset_and_setup.sh
-```  
-
-- No arguments needed; fully automated.
-
----
-
-## 9. Verification
-
-```bash
-ls -ld "$HOME_DIR"
-ls -l "$HOME_DIR/$FLAG_FILE"
-```  
-
-- Home dir: `drwxr-x--- RUNNER NEW_GROUP`  
-- Flag file: `-rw-r----- RUNNER NEW_USER`
-
----
-
-## Full Script
-
-```bash
-#!/usr/bin/env bash
-set -euo pipefail
-IFS=$'\n\t'
-
-# Configuration
-NEW_USER="bushranger"
-NEW_GROUP="bushrangers"
-HOME_DIR="/home/$NEW_USER"
-FLAG_FILE="secret.flag"
-FLAG_CONTENT="foo"
-RUNNER="$USER"
-
-# 3. Clean up previous setup
-if [ -f "$HOME_DIR/$FLAG_FILE" ]; then
-  echo "Removing old flag: $HOME_DIR/$FLAG_FILE"
-  sudo rm -f "$HOME_DIR/$FLAG_FILE"
-fi
-if [ -d "$HOME_DIR" ]; then
-  echo "Deleting old home directory: $HOME_DIR"
-  sudo rm -rf "$HOME_DIR"
-fi
-if id "$NEW_USER" >/dev/null 2>&1; then
-  echo "Deleting user: $NEW_USER"
-  sudo userdel "$NEW_USER"
-fi
-if getent group "$NEW_GROUP" >/dev/null; then
-  echo "Deleting group: $NEW_GROUP"
-  sudo groupdel "$NEW_GROUP"
-fi
-
-# 4. Create group and user
-echo "Creating group: $NEW_GROUP"
-sudo groupadd "$NEW_GROUP"
-
-echo "Creating user: $NEW_USER"
-sudo useradd -m -g "$NEW_GROUP" -s /bin/bash "$NEW_USER"
-
-# 5. Secure home directory
-echo "Chowning $HOME_DIR to $RUNNER:$NEW_GROUP"
-sudo chown -R "$RUNNER":"$NEW_GROUP" "$HOME_DIR"
-
-echo "Setting home directory perms to u=rwx,g=rx,o="
-sudo chmod u=rwx,g=rx,o= "$HOME_DIR"
-
-# 6. Create and initialize secret.flag
-echo "Creating flag file: $FLAG_FILE"
-echo "$FLAG_CONTENT" | sudo tee "$HOME_DIR/$FLAG_FILE" >/dev/null
-
-# 7. Set flag ownership and perms
-echo "Chowning flag to $RUNNER:$NEW_USER"
-sudo chown "$RUNNER":"$NEW_USER" "$HOME_DIR/$FLAG_FILE"
-
-echo "Setting flag perms to u=rw,g=r,o="
-chmod u=rw,g=r,o= "$HOME_DIR/$FLAG_FILE"
 ```
+
+This gives permission to run the file as a program.
+
+---
+
+## Step 5: Run the Script
+
+Now run the script:
+
+```bash
+./reset_and_setup.sh
+```
+
+You may be asked to enter your password to allow `sudo` commands to run.
+
+---
+
+## Step 6: Check the Results
+
+After the script finishes, verify the setup using:
+
+```bash
+ls -ld /home/bushranger
+ls -l /home/bushranger/secret.flag
+```
+
+Expected output:
+
+```
+drwxr-x---  RUNNER  bushrangers  ... /home/bushranger
+-rw-r-----  RUNNER  bushranger   ... /home/bushranger/secret.flag
+```
+
+
