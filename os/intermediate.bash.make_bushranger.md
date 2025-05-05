@@ -172,36 +172,24 @@ FLAG_CONTENT="foo"
 RUNNER="$USER"
 
 # 1. Create group
-if ! getent group "$NEW_GROUP" >/dev/null; then
-  echo "Creating group: $NEW_GROUP"
-  sudo groupadd "$NEW_GROUP"
-fi
+sudo groupadd "$NEW_GROUP"
 
-# 2. Create user
-if ! id "$NEW_USER" >/dev/null 2>&1; then
-  echo "Creating user: $NEW_USER"
-  sudo useradd -m -g "$NEW_GROUP" -s /bin/bash "$NEW_USER"
-fi
+# 2. Create user and home directory
+sudo useradd -m -g "$NEW_GROUP" -s /bin/bash "$NEW_USER"
 
-# 3. Secure home directory
-echo "Chowning /home/$NEW_USER to $RUNNER:$NEW_GROUP"
-sudo chown -R "$RUNNER":"$NEW_GROUP" "/home/$NEW_USER"
+# 3. Change ownership of the home directory
+sudo chown -R "$RUNNER:$NEW_GROUP" "/home/$NEW_USER"
 
-echo "Setting home dir permissions"
+# 4. Set home directory permissions
 sudo chmod u=rwx,g=rx,o= "/home/$NEW_USER"
 
-# (Optional) Set default umask for new files
-# echo "Setting default umask"
-# sudo sed -i "/^umask /c\umask 027" "/home/$NEW_USER/.profile"
-
-# 4. Create and initialize secret.flag
-echo "Creating flag file: $FLAG_FILE"
+# 5. Create flag file with content
 sudo -u "$NEW_USER" bash -c "echo '$FLAG_CONTENT' > /home/$NEW_USER/$FLAG_FILE"
 
-# 5. Set flag file owner and perms
-echo "Chowning flag file to $RUNNER:$NEW_USER"
-sudo chown "$RUNNER":"$NEW_USER" "/home/$NEW_USER/$FLAG_FILE"
+# 6. Change flag file ownership
+sudo chown "$RUNNER:$NEW_USER" "/home/$NEW_USER/$FLAG_FILE"
 
-echo "Setting flag file perms to u=rw,g=r,o="
+# 7. Set flag file permissions
 chmod u=rw,g=r,o= "/home/$NEW_USER/$FLAG_FILE"
+
 ```
