@@ -1,2 +1,4 @@
 
 /containerlabs/clab-router-switch-web-lab
+*.bak
+/containerlabs/clab-alpine-dual-net
