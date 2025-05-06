@@ -3,12 +3,14 @@
 echo "Hello switch1!"
 
 # Enable immediate flushing of output
-set -o pipefail
+set -euxo pipefail
 exec > >(tee /proc/1/fd/1) 2>&1
 
 # Ensure correct environment variables are set
 export PATH=/usr/lib/frr:$PATH
-export LD_LIBRARY_PATH=/usr/lib/frr:$LD_LIBRARY_PATH
+# export LD_LIBRARY_PATH=/usr/lib/frr:$LD_LIBRARY_PATH
+export LD_LIBRARY_PATH="/usr/lib/frr:${LD_LIBRARY_PATH:-}"
+
 
 # Enable IP forwarding
 sysctl -w net.ipv4.ip_forward=1
@@ -53,7 +55,12 @@ echo "All interfaces are up!"
 echo "Setting up Linux bridge"
 
 # Create a Linux bridge instead of using FRR
-brctl addbr br0
+# brctl addbr br0
+
+ip link add name br0 type bridge
+ip link set br0 up
+
+
 
 # Add all UP interfaces to the bridge, ignoring the '@' part
 # for iface in $(ip -br link | awk '$2 == "UP" {print $1}' | cut -d'@' -f1); do
@@ -76,4 +83,6 @@ echo "Bridge setup complete!"
 
 ip -br link
 
-sleep infinity
+# sleep infinity
+tail -f /dev/null
+
