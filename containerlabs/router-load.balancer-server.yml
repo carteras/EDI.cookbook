@@ -44,6 +44,8 @@ topology:
       binds:
         - ./servers/loadbalancer/haproxy.cfg:/etc/haproxy/haproxy.cfg
       cmd: sh -c "apk add haproxy && haproxy -f /etc/haproxy/haproxy.cfg"
+      ports:
+        - 8080:80
 
 
   links:
