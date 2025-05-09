@@ -142,11 +142,7 @@ You should see something like:
 ```bash
 drwxr-x--- 2 adam bushranger.000 ... /home/bushranger.000
 -rw-r----- 1 adam bushranger.000 ... /home/bushranger.000/secret.flag
-```
 
----
-
-## Full Script (Aligned with Your Latest Version)
 
 ```bash
 #!/bin/bash
@@ -177,4 +173,3 @@ sudo chown "$OWNER_USER:$TARGET_GROUP" "/home/$TARGET_USER/$FILENAME"
 sudo chmod u+rw,g+r,o-rwx "/home/$TARGET_USER/$FILENAME"
 echo "$CONTENT" > "/home/$TARGET_USER/$FILENAME"
 ```
-
